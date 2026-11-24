@@ -15,6 +15,7 @@ Use the folder for your game flavor (`_retail_`, `_classic_`, `_classic_era_`, a
 ## Playing
 
 - A small draggable window shows your coins. Hover over it for your stats; click it to open the shop.
+- The shop's **Reset progress** button wipes coins, upgrades and stats after a confirmation.
 - Combo stacks and crits show on the window as they happen.
 - Once you own Rhythm, dropping a combo of 20 or more shows a big announcement at the top of the screen: gold at 20+, purple "EPIC" at 50+, orange "LEGENDARY" at 100+.
 
