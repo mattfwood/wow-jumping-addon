@@ -8,10 +8,18 @@ A World of Warcraft addon and incremental game: jumping earns coins, and coins b
 
 Addons can't press keys or move the character, so never design anything that jumps for the player.
 
+## Team decisions
+
+Settled; don't relitigate them in a feature PR. Changing one needs agreement from both of us and an update here and in ROADMAP.md.
+
+- **Saves are split.** Coins, upgrades and stats are per character (`JumpCoinsDB`). Prestige (Phase 4) will be account-wide in a separate `## SavedVariables` table.
+- **Plain code, no libraries.** No Ace3, LibDBIcon or other libraries.
+- **Phase 2 is a light nudge.** Situational multipliers stay around 1.1×–1.5×.
+- **Theme is plain coins.** Coins, upgrades and Feathers; no story theme or themed naming.
+
 ## Environment
 
 - WoW runs **Lua 5.1**. No `goto`, integer division (`//`), bitwise operators or `utf8` library.
-- No libraries (no Ace3) unless the team decides otherwise.
 - The addon must work on Classic and Retail clients (see `## Interface` in `JumpCoins/JumpCoins.toc`). Use only APIs that exist on both, and guard optional ones (`if SOUNDKIT and ... then`).
 - You cannot run the game. Anything visual or API-dependent is unverified until someone tests it in game; say so in the PR.
 
@@ -25,6 +33,7 @@ Files in `JumpCoins/` load in TOC order and share state through the addon namesp
 - `Jump.lua`: jump detection, combos, crits, payouts. Keep payout math in pure functions (like `ns.CalculateJump`) so it's testable.
 - `UI.lua`: coin display, combo counter, crit popup.
 - `Shop.lua`: shop window.
+- `Debug.lua`: `/jc debug` commands for in-game testing. When a feature adds state worth poking at (a new boost, a zone list), add a debug command for it.
 - `Slash.lua`: `/jc` commands.
 
 Modules don't call each other's UI directly. Gameplay code fires events (`COINS_CHANGED`, `UPGRADE_BOUGHT`, `JUMP`) and UI code listens. When adding a file, add it to `JumpCoins.toc` in the right load order.
@@ -53,10 +62,19 @@ luajit tests/run.lua
 
 - `tests/run.lua` stubs the WoW API. When code uses a new WoW function, add a stub there and its name to `read_globals` in `.luacheckrc`.
 - Add tests for new gameplay logic, upgrades and migrations.
+- A project hook runs luacheck on every Lua file you edit. If it reports problems, fix them before moving on.
 
 ## Workflow
 
-- Never push to `main`; it's protected. Work on a branch and open a PR.
-- One feature per branch, ideally tied to a GitHub issue or roadmap item.
+Work is tracked in GitHub issues, and two people's Claudes work on this repo at once. To avoid building the same thing twice:
+
+1. Before starting, run `gh issue list` and pick an issue nobody is assigned to. If the work has no issue, create one.
+2. Claim it before writing code: `gh issue edit <number> --add-assignee "@me"`. If someone else is assigned, stop and ask.
+3. Work on a branch named after the issue, for example `2-zone-bonus`. Never push to `main`; it's protected.
+4. Open a PR that says `Closes #<number>`. Fill in the template, including the in-game checks from [TESTING.md](TESTING.md) that apply. If nobody has run it in game, say so and add the `needs in-game test` label.
+
+Also:
+
+- One feature per branch and PR. Keep PRs small so the other person's branch rebases easily.
 - Keep upgrade numbers (costs, growth, effects) in the definitions table, and note balance changes in the PR.
-- In the PR, fill in the "Tested in game" section honestly. If nobody has run it in game, say so.
+- If an issue's notes conflict with the team decisions above, the decisions win; point out the conflict in the issue.

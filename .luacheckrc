@@ -15,6 +15,7 @@ files["JumpCoins/"] = {
         "SLASH_JUMPCOINS1",
         "SLASH_JUMPCOINS2",
         "SlashCmdList",
+        "StaticPopupDialogs",
     },
     -- WoW API the addon reads. Add new API functions here when you use them.
     read_globals = {
@@ -29,6 +30,8 @@ files["JumpCoins/"] = {
         "IsSwimming",
         "PlaySound",
         "SOUNDKIT",
+        "StaticPopup_Show",
+        "STANDARD_TEXT_FONT",
         "strlower",
         "strtrim",
         "UIParent",
@@ -37,9 +40,11 @@ files["JumpCoins/"] = {
     },
 }
 
--- The test harness stubs the WoW API by defining globals on purpose.
+-- The test harness stubs the WoW API by defining globals on purpose. 131
+-- (unused global) is ignored because the addon files, not the harness, use
+-- the stubs, which only shows when this file is linted on its own.
 files["tests/"] = {
     std = "+max",
     allow_defined_top = true,
-    ignore = { "111", "112", "113", "121", "122", "142", "143" },
+    ignore = { "111", "112", "113", "121", "122", "131", "142", "143" },
 }

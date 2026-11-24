@@ -10,5 +10,7 @@ Format.lua
 Upgrades.lua
 Jump.lua
 UI.lua
+Announce.lua
 Shop.lua
+Debug.lua
 Slash.lua
