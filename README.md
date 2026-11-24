@@ -53,14 +53,24 @@ Files in `JumpCoins/` load in the order listed in `JumpCoins.toc`:
 
 Progress is saved per character in `JumpCoinsDB`. When the save format changes, bump `ns.SAVE_VERSION` in `Core.lua` and add a migration.
 
-## Tests
+## Tests and lint
 
-The tests fake the WoW API and run the addon outside the game. They need LuaJIT, which uses the same Lua version as WoW:
+The tests fake the WoW API and run the addon outside the game. They need LuaJIT, which uses the same Lua version as WoW. luacheck catches misspelled globals and other mistakes that would otherwise only show up in game.
 
 ```bash
-brew install luajit
+brew install luajit luacheck
+```
+
+```bash
+luacheck .
 ```
 
 ```bash
 luajit tests/run.lua
 ```
+
+CI runs both on every pull request, and they must pass before merging.
+
+## Contributing
+
+`main` is protected: work on a branch and open a pull request. Project rules for people and Claude alike are in [CLAUDE.md](CLAUDE.md).

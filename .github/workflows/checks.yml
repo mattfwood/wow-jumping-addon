@@ -1,0 +1,24 @@
+name: Checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  checks:
+    name: Lint and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install LuaJIT and luacheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y luajit lua-check
+
+      - name: Lint
+        run: luacheck .
+
+      - name: Test
+        run: luajit tests/run.lua
