@@ -16,13 +16,14 @@ Use the folder for your game flavor (`_retail_`, `_classic_`, `_classic_era_`, a
 
 - A small draggable window shows your coins. Hover over it for your stats; click it to open the shop.
 - Combo stacks and crits show on the window as they happen.
+- Once you own Rhythm, dropping a combo of 20 or more shows a big announcement at the top of the screen: gold at 20+, purple "EPIC" at 50+, orange "LEGENDARY" at 100+.
 
 ### Upgrades
 
 | Upgrade | Effect per level | Starting cost | Cost growth |
 | --- | --- | --- | --- |
 | Spring Boots | +1 coin per jump | 10 | ×1.15 |
-| Rhythm | +5% per combo stack. Jumps within 1.5s build a combo, up to 10 stacks. | 50 | ×1.25 |
+| Rhythm | +5% per combo stack. Jumping again within 1.5s of landing builds a combo, up to 10 stacks. | 50 | ×1.25 |
 | Lucky Landing | +2% chance for a jump to pay 10× (max level 25) | 100 | ×1.35 |
 
 ### Commands
@@ -38,6 +39,8 @@ Use the folder for your game flavor (`_retail_`, `_classic_`, `_classic_era_`, a
 ## How jumps are detected
 
 The addon hooks `JumpOrAscendStart`, which runs when you press the jump key. A press doesn't count while you're falling, swimming, flying or on a flight path. Two presses within 0.25s count as one. Holding the jump key down counts only the first hop.
+
+The combo window starts when you land, not when you press jump, so long jumps don't eat into it. WoW has no landing event, so the addon checks `IsFalling()` each frame after a jump until you land.
 
 ## Code layout
 
@@ -73,4 +76,4 @@ CI runs both on every pull request, and they must pass before merging.
 
 ## Contributing
 
-`main` is protected: work on a branch and open a pull request. Project rules for people and Claude alike are in [CLAUDE.md](CLAUDE.md).
+`main` is protected: work on a branch and open a pull request. Project rules for people and Claude alike are in [CLAUDE.md](CLAUDE.md). Work is tracked in [GitHub issues](https://github.com/mattfwood/wow-jumping-addon/issues): assign yourself before you start. [TESTING.md](TESTING.md) has the in-game checklist and `/jc debug` commands for testing quickly.

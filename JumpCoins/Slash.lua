@@ -37,6 +37,8 @@ SlashCmdList.JUMPCOINS = function(input)
     elseif cmd == "reset confirm" then
         ns.ResetProgress()
         ns.Print("Progress reset.")
+    elseif cmd == "debug" or cmd:match("^debug%s") then
+        ns.HandleDebug(cmd:match("^debug%s*(.*)$"))
     else
         ns.Print(HELP)
     end
