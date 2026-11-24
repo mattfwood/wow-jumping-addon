@@ -23,15 +23,22 @@ Balance is checked by `tools/sim.lua` (in CI), which simulates a player who jump
 
 After about an hour, progress flattens on purpose. Phase 2 content and Phase 4 prestige are what keep it moving.
 
-## Phase 1: First upgrades
+## Phase 1: First upgrades (done)
 
 Goal: give coins something to buy.
 
 - **Shop window** opened from the coin display. Upgrade prices rise with each purchase.
 - **Spring Boots:** +1 coin per jump.
-- **Rhythm (combo):** jumps chained within 1.5s build combo stacks that multiply coins. A combo counter shows while active.
+- **Rhythm (combo):** jumping again within 1.5s of landing builds combo stacks that multiply coins. A combo counter shows while active.
 - **Lucky Landing:** chance for a "crit" jump worth 10×, with a visual pop.
 - **Under the hood:** save version number with migrations; big-number formatting (1.2K, 3.4M).
+
+Also shipped in Phase 1:
+
+- **Landing-based combos:** the combo window starts when you land, so long jumps don't break combos.
+- **Combo drop announcement:** a banner when a combo of 20+ ends (gold, EPIC at 50+, LEGENDARY at 100+).
+- **Reset progress** button in the shop, behind a confirmation.
+- **Dev tools:** `/jc debug` commands, TESTING.md, the balance simulator (`tools/sim.lua`) and the pacing targets above.
 
 ## Phase 2: Jumping around the world
 

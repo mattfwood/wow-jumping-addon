@@ -32,11 +32,14 @@ Files in `JumpCoins/` load in TOC order and share state through the addon namesp
 - `Upgrades.lua`: upgrade definitions in `ns.UPGRADES`, costs, buying. New upgrades go here.
 - `Jump.lua`: jump detection, combos, crits, payouts. Keep payout math in pure functions (like `ns.CalculateJump`) so it's testable.
 - `UI.lua`: coin display, combo counter, crit popup.
+- `Announce.lua`: big on-screen banner when a combo of 20+ is dropped (listens for `COMBO_ENDED`).
 - `Shop.lua`: shop window.
 - `Debug.lua`: `/jc debug` commands for in-game testing. When a feature adds state worth poking at (a new boost, a zone list), add a debug command for it.
 - `Slash.lua`: `/jc` commands.
 
-Modules don't call each other's UI directly. Gameplay code fires events (`COINS_CHANGED`, `UPGRADE_BOUGHT`, `JUMP`) and UI code listens. When adding a file, add it to `JumpCoins.toc` in the right load order.
+Modules don't call each other's UI directly. Gameplay code fires events (`COINS_CHANGED`, `UPGRADE_BOUGHT`, `JUMP`, `COMBO_ENDED`) and UI code listens. When adding a file, add it to `JumpCoins.toc` in the right load order.
+
+Outside the addon folder: `tests/run.lua` (offline tests with a stubbed WoW API) and `tools/sim.lua` (balance simulator). Neither ships with the addon.
 
 ## Saved variables
 
@@ -67,6 +70,7 @@ luajit tools/sim.lua
 - `tests/run.lua` stubs the WoW API. When code uses a new WoW function, add a stub there and its name to `read_globals` in `.luacheckrc`.
 - Add tests for new gameplay logic, upgrades and migrations.
 - `tools/sim.lua` simulates a player buying upgrades and fails if the pacing targets (ROADMAP.md) are missed. Any change to upgrade costs, growth or effects, or new upgrades, must keep it passing, and the PR should include its output. Try a casual (`luajit tools/sim.lua 2.5 6`) and a skilled player (`1.1 40`) too. If the targets themselves should change, update them in both ROADMAP.md and `TARGETS` in the simulator.
+- The simulator only knows about what it models. Any new source of extra coins that isn't an upgrade (zone bonuses, situational multipliers, timed boosts, daily bonuses) must be added to `tools/sim.lua` with a reasonable assumption about how often it applies. Otherwise CI can't see its effect on pacing.
 - Tests should read prices and effects from `ns.UPGRADES_BY_ID` rather than hard-coding them, so balance changes don't break mechanics tests.
 - A project hook runs luacheck on every Lua file you edit. If it reports problems, fix them before moving on.
 
