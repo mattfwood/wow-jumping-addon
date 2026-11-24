@@ -27,7 +27,7 @@ ns.UPGRADES = {
         name = "Rhythm",
         icon = "Interface\\Icons\\Ability_Rogue_Sprint",
         desc = string.format(
-            "Jump again within %.1fs to build a combo. Each stack (up to %d) adds a bonus.",
+            "Jump again within %.1fs of landing to build a combo. Each stack (up to %d) adds a bonus.",
             ns.COMBO_WINDOW, ns.COMBO_MAX_STACKS),
         baseCost = 50,
         growth = 1.25,

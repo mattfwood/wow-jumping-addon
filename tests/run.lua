@@ -423,6 +423,102 @@ test("big announcement for a dropped 20+ combo with Rhythm", function()
     eq(ns.GetComboTier(150).title, "LEGENDARY COMBO", "legendary tier")
 end)
 
+-- Landing-based combo timing. These drive the per-frame watcher like the game
+-- would: `fly` takes off at `up`, stays airborne, and lands at `down`.
+local falling = false
+IsFalling = function() return falling end
+
+local function tick(at)
+    clock = at
+    for _, f in ipairs(loadFrames) do
+        if f.scripts.OnUpdate then f.scripts.OnUpdate(f, 0.016) end
+    end
+end
+
+local function fly(up, down)
+    falling = true
+    tick(up)
+    tick((up + down) / 2)
+    falling = false
+    tick(down)
+end
+
+test("a long jump doesn't break the combo", function()
+    LoadAddon(nil)
+    jump(20000)
+    fly(20000.05, 20003)   -- 3s in the air (down a cliff)
+    jump(20004)            -- 1s after landing, 4s after the press
+    eq(ns.combo, 2, "combo continues")
+end)
+
+test("the window counts from landing", function()
+    LoadAddon(nil)
+    jump(21000)
+    fly(21000.05, 21001)
+    jump(21001 + ns.COMBO_WINDOW + 0.1) -- just too late after landing
+    eq(ns.combo, 1, "combo reset")
+    jump(21010)
+    fly(21010.05, 21011)
+    jump(21011 + ns.COMBO_WINDOW - 0.1) -- just in time
+    eq(ns.combo, 2, "combo kept")
+end)
+
+test("a combo never ends mid-air", function()
+    LoadAddon(nil)
+    local ends = captureComboEnds()
+    jump(22000); fly(22000.05, 22001)
+    jump(22001.5)           -- combo 2
+    falling = true
+    tick(22001.6)           -- takeoff
+    tick(22010)             -- 8s in the air
+    eq(#ends, 0, "still airborne, combo alive")
+    eq(ns.IsComboActive(22010), true, "active while airborne")
+    falling = false
+    tick(22011)             -- land
+    tick(22011 + ns.COMBO_WINDOW - 0.1)
+    eq(#ends, 0, "inside window after landing")
+    tick(22011 + ns.COMBO_WINDOW + 0.1)
+    eq(#ends, 1, "ended after the window from landing")
+    eq(ends[1].combo, 2, "combo length")
+end)
+
+test("a jump that never takes off falls back to the press time", function()
+    LoadAddon(nil)
+    local ends = captureComboEnds()
+    jump(23000)
+    jump(23001)             -- combo 2, never airborne (rooted)
+    tick(23001.1)
+    eq(ns.IsComboActive(23001.1), true, "active during grace")
+    tick(23001.5)           -- grace over: window counts from the press
+    tick(23001 + ns.COMBO_WINDOW - 0.05)
+    eq(#ends, 0, "inside window from the press")
+    tick(23001 + ns.COMBO_WINDOW + 0.05)
+    eq(#ends, 1, "ended")
+end)
+
+test("landing missed by the watcher still counts at the next jump", function()
+    LoadAddon(nil)
+    jump(24000)
+    falling = true
+    tick(24000.05)          -- took off; landing frame never ticked
+    falling = false
+    jump(24003)             -- on the ground again: treated as just landed
+    eq(ns.combo, 2, "combo continues")
+end)
+
+test("watcher stops once the window runs out", function()
+    LoadAddon(nil)
+    jump(25000)
+    fly(25000.05, 25001)
+    local watcher
+    for _, f in ipairs(loadFrames) do
+        if f.scripts.OnUpdate and f ~= JumpCoinsFrame then watcher = f end
+    end
+    assert(watcher, "watcher running after a jump")
+    tick(25001 + ns.COMBO_WINDOW + 0.1)
+    eq(watcher.scripts.OnUpdate, nil, "watcher stopped")
+end)
+
 test("no announcement without Rhythm", function()
     LoadAddon(nil)
     local last = chain(13000, 30)

@@ -23,7 +23,7 @@ Use the folder for your game flavor (`_retail_`, `_classic_`, `_classic_era_`, a
 | Upgrade | Effect per level | Starting cost | Cost growth |
 | --- | --- | --- | --- |
 | Spring Boots | +1 coin per jump | 10 | ×1.15 |
-| Rhythm | +5% per combo stack. Jumps within 1.5s build a combo, up to 10 stacks. | 50 | ×1.25 |
+| Rhythm | +5% per combo stack. Jumping again within 1.5s of landing builds a combo, up to 10 stacks. | 50 | ×1.25 |
 | Lucky Landing | +2% chance for a jump to pay 10× (max level 25) | 100 | ×1.35 |
 
 ### Commands
@@ -39,6 +39,8 @@ Use the folder for your game flavor (`_retail_`, `_classic_`, `_classic_era_`, a
 ## How jumps are detected
 
 The addon hooks `JumpOrAscendStart`, which runs when you press the jump key. A press doesn't count while you're falling, swimming, flying or on a flight path. Two presses within 0.25s count as one. Holding the jump key down counts only the first hop.
+
+The combo window starts when you land, not when you press jump, so long jumps don't eat into it. WoW has no landing event, so the addon checks `IsFalling()` each frame after a jump until you land.
 
 ## Code layout
 
