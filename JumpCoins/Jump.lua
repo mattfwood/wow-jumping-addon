@@ -8,6 +8,26 @@ local JUMP_DEBOUNCE = 0.25
 local lastJumpTime = -math.huge
 ns.combo = 0 -- jumps in the current chain (1 = a single jump)
 
+local comboCoins = 0     -- coins earned during the current chain
+local comboStartBest = 0 -- best combo before the current chain started
+local comboOpen = false  -- a chain of 2+ jumps not yet reported as ended
+
+-- Watches an open combo each frame so COMBO_ENDED fires the moment it runs out.
+local watcher = CreateFrame("Frame")
+
+-- Fires COMBO_ENDED(combo, coins, isNewBest) once when a chain of 2+ jumps
+-- runs out of time.
+function ns.CheckComboEnded(now)
+    if not comboOpen or now - lastJumpTime <= ns.COMBO_WINDOW then return end
+    comboOpen = false
+    watcher:SetScript("OnUpdate", nil)
+    ns.Fire("COMBO_ENDED", ns.combo, comboCoins, ns.combo > comboStartBest)
+end
+
+local function WatchCombo()
+    ns.CheckComboEnded(GetTime())
+end
+
 -- Pure payout math, kept separate so it can be tested without the game.
 -- `combo` is the chain length including this jump; `isCrit` is the roll.
 function ns.CalculateJump(combo, isCrit)
@@ -35,10 +55,15 @@ function ns.RegisterJump(now, roll)
     local sinceLast = now - lastJumpTime
     if sinceLast < JUMP_DEBOUNCE then return nil end
 
+    -- Report the previous chain first, in case the watcher hasn't run yet.
+    ns.CheckComboEnded(now)
+
     if sinceLast <= ns.COMBO_WINDOW then
         ns.combo = ns.combo + 1
     else
         ns.combo = 1
+        comboCoins = 0
+        comboStartBest = db.stats.bestCombo
     end
     lastJumpTime = now
 
@@ -50,6 +75,12 @@ function ns.RegisterJump(now, roll)
     db.totalJumps = db.totalJumps + 1
     if ns.combo > db.stats.bestCombo then db.stats.bestCombo = ns.combo end
     if isCrit then db.stats.crits = db.stats.crits + 1 end
+
+    comboCoins = comboCoins + earned
+    if ns.combo >= 2 and not comboOpen then
+        comboOpen = true
+        watcher:SetScript("OnUpdate", WatchCombo)
+    end
 
     ns.Fire("JUMP", earned, isCrit, ns.combo)
     ns.Fire("COINS_CHANGED")

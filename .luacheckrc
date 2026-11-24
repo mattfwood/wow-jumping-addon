@@ -29,6 +29,7 @@ files["JumpCoins/"] = {
         "IsSwimming",
         "PlaySound",
         "SOUNDKIT",
+        "STANDARD_TEXT_FONT",
         "strlower",
         "strtrim",
         "UIParent",

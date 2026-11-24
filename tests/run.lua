@@ -87,9 +87,12 @@ local function LoadAddon(savedVars)
     GameTooltip = NewMock("GameTooltip")
     local loader
     local realCreate = CreateFrame
+    -- Frames the addon creates while loading (event loader, combo watcher...).
+    loadFrames = {}
     CreateFrame = function(t, name, ...)
         local f = realCreate(t, name, ...)
         if not loader and not name then loader = f end
+        table.insert(loadFrames, f)
         return f
     end
     for _, file in ipairs(tocFiles) do
@@ -310,6 +313,121 @@ test("slash commands", function()
     SlashCmdList.JUMPCOINS("count")
     SlashCmdList.JUMPCOINS("resetpos")
     SlashCmdList.JUMPCOINS("bogus")
+end)
+
+-- Records COMBO_ENDED events for the currently loaded addon.
+local function captureComboEnds()
+    local events = {}
+    ns.On("COMBO_ENDED", function(combo, coins, isNewBest)
+        table.insert(events, { combo = combo, coins = coins, best = isNewBest })
+    end)
+    return events
+end
+
+-- Jumps `count` times, 1s apart, starting at `start`. Returns the last time.
+local function chain(start, count)
+    for i = 0, count - 1 do jump(start + i) end
+    return start + count - 1
+end
+
+test("COMBO_ENDED fires once when the window runs out", function()
+    LoadAddon({ version = 2, upgrades = { rhythm = 1 } }) -- +5% per stack
+    local ends = captureComboEnds()
+    local last = chain(9000, 5)
+    ns.CheckComboEnded(last + 1)
+    eq(#ends, 0, "not yet: still inside the window")
+    ns.CheckComboEnded(last + ns.COMBO_WINDOW + 0.01)
+    eq(#ends, 1, "fired after window")
+    eq(ends[1].combo, 5, "final combo")
+    local expected = 0
+    for c = 1, 5 do expected = expected + 1 + (c - 1) * 0.05 end
+    near(ends[1].coins, expected, "coins earned in the chain")
+    eq(ends[1].best, true, "first chain is a new best")
+    ns.CheckComboEnded(last + 10)
+    eq(#ends, 1, "fires only once")
+end)
+
+test("the in-game watcher reports the drop on its own", function()
+    LoadAddon(nil)
+    local ends = captureComboEnds()
+    local last = chain(9500, 3)
+    -- Simulate one game frame: run every OnUpdate the addon has registered.
+    local function tick()
+        for _, f in ipairs(loadFrames) do
+            if f.scripts.OnUpdate then f.scripts.OnUpdate(f, 0.016) end
+        end
+    end
+    clock = last + 1
+    tick()
+    eq(#ends, 0, "still inside the window")
+    clock = last + ns.COMBO_WINDOW + 0.5
+    tick()
+    eq(#ends, 1, "watcher reported the drop")
+    eq(ends[1].combo, 3, "combo length")
+    tick()
+    eq(#ends, 1, "watcher stopped after reporting")
+end)
+
+test("single jumps never fire COMBO_ENDED", function()
+    LoadAddon(nil)
+    local ends = captureComboEnds()
+    jump(9800); jump(9810); jump(9820)
+    ns.CheckComboEnded(9900)
+    eq(#ends, 0, "no combo, no event")
+end)
+
+test("a new chain reports the old one even if the watcher missed it", function()
+    LoadAddon(nil)
+    local ends = captureComboEnds()
+    chain(10000, 4)
+    jump(10100) -- long after: starts a new chain
+    eq(#ends, 1, "old chain reported")
+    eq(ends[1].combo, 4, "old chain length")
+    eq(ns.combo, 1, "new chain started")
+end)
+
+test("new best only when beating the best from before the chain", function()
+    LoadAddon(nil)
+    local ends = captureComboEnds()
+    chain(11000, 6); ns.CheckComboEnded(11100)
+    chain(11200, 4); ns.CheckComboEnded(11300)
+    chain(11400, 8); ns.CheckComboEnded(11500)
+    eq(ends[1].best, true, "first is best")
+    eq(ends[2].best, false, "shorter is not")
+    eq(ends[3].best, true, "longer is")
+    eq(ns.db.stats.bestCombo, 8, "best saved")
+end)
+
+test("big announcement for a dropped 20+ combo with Rhythm", function()
+    LoadAddon({ version = 2, upgrades = { rhythm = 1 } })
+    local last = chain(12000, 19)
+    ns.CheckComboEnded(last + 5)
+    eq(JumpCoinsAnnounce, nil, "19 doesn't announce")
+
+    last = chain(12100, 23)
+    ns.CheckComboEnded(last + 5)
+    local banner = JumpCoinsAnnounce
+    assert(banner, "banner created")
+    eq(banner:IsShown(), true, "banner shown")
+    eq(banner.title.text, "23x COMBO!", "title")
+    assert(banner.subtitle.text:find("coins in the chain"), "subtitle: " .. tostring(banner.subtitle.text))
+    assert(banner.subtitle.text:find("NEW BEST"), "new best shown")
+
+    last = chain(12200, 55)
+    ns.CheckComboEnded(last + 5)
+    eq(banner.title.text, "55x EPIC COMBO!", "epic tier")
+    last = chain(12300, 20)
+    ns.CheckComboEnded(last + 5)
+    eq(banner.title.text, "20x COMBO!", "exactly 20 announces")
+    assert(not banner.subtitle.text:find("NEW BEST"), "not a new best")
+    eq(ns.GetComboTier(150).title, "LEGENDARY COMBO", "legendary tier")
+end)
+
+test("no announcement without Rhythm", function()
+    LoadAddon(nil)
+    local last = chain(13000, 30)
+    ns.CheckComboEnded(last + 5)
+    eq(JumpCoinsAnnounce, nil, "no banner without rhythm")
 end)
 
 io.write(string.format("%d passed, %d failed\n", passed, failed))
