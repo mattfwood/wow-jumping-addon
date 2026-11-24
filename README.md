@@ -22,9 +22,9 @@ Use the folder for your game flavor (`_retail_`, `_classic_`, `_classic_era_`, a
 
 | Upgrade | Effect per level | Starting cost | Cost growth |
 | --- | --- | --- | --- |
-| Spring Boots | +1 coin per jump | 10 | ×1.15 |
-| Rhythm | +5% per combo stack. Jumping again within 1.5s of landing builds a combo, up to 10 stacks. | 50 | ×1.25 |
-| Lucky Landing | +2% chance for a jump to pay 10× (max level 25) | 100 | ×1.35 |
+| Spring Boots | +1 coin per jump | 20 | ×1.33 |
+| Rhythm | +1% per combo stack. Jumping again within 1.5s of landing builds a combo, up to 10 stacks. | 100 | ×1.45 |
+| Lucky Landing | +1% chance for a jump to pay 10× (max level 20) | 300 | ×1.7 |
 
 ### Commands
 
@@ -72,7 +72,13 @@ luacheck .
 luajit tests/run.lua
 ```
 
-CI runs both on every pull request, and they must pass before merging.
+`tools/sim.lua` simulates a player buying upgrades and checks the pacing targets in ROADMAP.md. Run it after any balance change:
+
+```bash
+luajit tools/sim.lua
+```
+
+CI runs all three on every pull request, and they must pass before merging.
 
 ## Contributing
 

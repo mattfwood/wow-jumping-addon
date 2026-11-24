@@ -12,6 +12,17 @@ Platform limit: addons can't press keys or move the character, so the game can r
 - One coin per jump, a draggable coin display, `/jc` commands.
 - Per-character save with separate `coins` and `totalJumps`.
 
+## Pacing targets
+
+Balance is checked by `tools/sim.lua` (in CI), which simulates a player who jumps every 1.3s in combos of 15 and always buys the best-value upgrade:
+
+- **First purchase:** 20–60s.
+- **Minutes 0–10:** a purchase every 20–90s (median).
+- **Minutes 10–30:** every 45–180s.
+- **Minutes 30–60:** every 90–360s.
+
+After about an hour, progress flattens on purpose. Phase 2 content and Phase 4 prestige are what keep it moving.
+
 ## Phase 1: First upgrades
 
 Goal: give coins something to buy.

@@ -205,17 +205,24 @@ test("debounce drops presses under 0.25s apart", function()
     eq(ns.db.totalJumps, 2, "jumps")
 end)
 
+-- These tests read prices and effects from the upgrade definitions, so they
+-- check the mechanics and keep passing when balance numbers change.
+local function def(id) return ns.UPGRADES_BY_ID[id] end
+
 test("buying Spring Boots raises cost and coins per jump", function()
-    LoadAddon({ version = 2, coins = 10 })
-    eq(ns.GetCost("springBoots"), 10, "first cost")
+    LoadAddon(nil)
+    local boots = def("springBoots")
+    local first = ns.GetCost("springBoots")
+    eq(first, boots.baseCost, "first cost is base cost")
+    ns.db.coins = first
     eq(ns.CanBuy("springBoots"), true, "affordable")
     assert(ns.Buy("springBoots"))
     eq(ns.db.coins, 0, "coins spent")
     eq(ns.GetLevel("springBoots"), 1, "level")
-    eq(ns.GetCost("springBoots"), 11, "second cost (10 * 1.15)")
+    eq(ns.GetCost("springBoots"), math.floor(boots.baseCost * boots.growth), "second cost grows")
     eq(ns.Buy("springBoots"), false, "can't afford")
     jump(2000)
-    eq(ns.db.coins, 2, "2 coins per jump")
+    eq(ns.db.coins, boots.effect(1), "pays the level 1 effect per jump")
 end)
 
 test("combo needs Rhythm to pay, caps at max stacks, resets after window", function()
@@ -225,49 +232,64 @@ test("combo needs Rhythm to pay, caps at max stacks, resets after window", funct
     eq(ns.db.coins, 2, "no bonus without rhythm")
     eq(ns.combo, 2, "combo still tracked")
 
-    ns.db.upgrades.rhythm = 2 -- +10% per stack
+    ns.db.upgrades.rhythm = 2
+    local perStack = def("rhythm").effect(2)
     ns.db.coins = 0
-    jump(3002)                      -- combo 3, 2 stacks -> 1.2
-    near(ns.db.coins, 1.2, "two stacks")
+    jump(3002)                      -- combo 3, 2 stacks
+    near(ns.db.coins, 1 + 2 * perStack, "two stacks")
     for i = 1, 20 do jump(3002 + i) end
     eq(ns.combo, 23, "combo keeps counting")
-    near(ns.CalculateJump(ns.combo, false), 1 + 10 * 0.1, "capped at 10 stacks")
+    near(ns.CalculateJump(ns.combo, false), 1 + ns.COMBO_MAX_STACKS * perStack, "capped at max stacks")
     eq(ns.db.stats.bestCombo, 23, "best combo")
 
     jump(3022 + ns.COMBO_WINDOW + 0.01)
     eq(ns.combo, 1, "combo reset after window")
 end)
 
-test("crits pay 10x and respect max level", function()
-    LoadAddon({ version = 2, coins = 0, upgrades = { luckyLanding = 5 } }) -- 10%
-    jump(4000, 0.05)  -- roll under 10% -> crit
-    eq(ns.db.coins, 10, "crit pays 10x")
+test("crits pay the crit multiplier and respect max level", function()
+    LoadAddon({ version = 2, coins = 0, upgrades = { luckyLanding = 5 } })
+    local chance = def("luckyLanding").effect(5)
+    jump(4000, chance / 2)  -- roll under the chance -> crit
+    eq(ns.db.coins, ns.CRIT_MULTIPLIER, "crit pays the multiplier")
     eq(ns.db.stats.crits, 1, "crit counted")
-    jump(4010, 0.5)
-    eq(ns.db.coins, 11, "normal jump")
+    jump(4010, chance + 0.01)
+    eq(ns.db.coins, ns.CRIT_MULTIPLIER + 1, "normal jump")
 
-    ns.db.upgrades.luckyLanding = 25
+    local max = def("luckyLanding").maxLevel
+    ns.db.upgrades.luckyLanding = max
     ns.db.coins = 1e12
     eq(ns.IsMaxed("luckyLanding"), true, "maxed")
     eq(ns.Buy("luckyLanding"), false, "can't buy past max")
 end)
 
+test("levels saved above a lowered max are clamped", function()
+    LoadAddon({ version = 2, upgrades = { luckyLanding = 99 } })
+    local max = def("luckyLanding").maxLevel
+    eq(ns.GetLevel("luckyLanding"), max, "clamped level")
+    near(ns.GetEffect("luckyLanding"), def("luckyLanding").effect(max), "clamped effect")
+    eq(ns.IsMaxed("luckyLanding"), true, "counts as maxed")
+end)
+
 test("shop rows reflect affordability and max", function()
-    LoadAddon({ version = 2, coins = 60, upgrades = { luckyLanding = 25 } })
+    LoadAddon(nil)
+    local bootsCost = def("springBoots").baseCost
+    local rhythmCost = def("rhythm").baseCost
+    ns.db.coins = rhythmCost + bootsCost - 1   -- rhythm, then not boots
+    ns.db.upgrades.luckyLanding = def("luckyLanding").maxLevel
     ns.ToggleShop(true)
     local shop = JumpCoinsShop
     eq(shop:IsShown(), true, "shop shown")
     local rows = shop.rows
     eq(rows[1].buy.enabled, true, "spring boots affordable")
-    eq(rows[1].buy.text, "10", "spring boots cost")
-    eq(rows[2].buy.enabled, true, "rhythm affordable at 60")
+    eq(rows[1].buy.text, ns.FormatNumber(bootsCost), "spring boots cost")
+    eq(rows[2].buy.enabled, true, "rhythm affordable")
     eq(rows[3].buy.text, "Maxed", "lucky maxed")
     eq(rows[3].buy.enabled, false, "lucky disabled")
 
-    rows[2].buy.scripts.OnClick()   -- buy rhythm for 50
+    rows[2].buy.scripts.OnClick()   -- buy rhythm
     eq(ns.GetLevel("rhythm"), 1, "rhythm bought via button")
     eq(rows[2].buy.enabled, false, "rhythm now unaffordable")
-    eq(rows[1].buy.enabled, true, "spring boots still affordable (10)")
+    eq(rows[1].buy.enabled, false, "spring boots now unaffordable (1 short)")
 end)
 
 test("display updates and click opens shop but drag does not", function()
@@ -328,21 +350,22 @@ test("debug coins, add and level", function()
     SlashCmdList.JUMPCOINS("debug level rhythm 3")
     eq(ns.GetLevel("rhythm"), 3, "level by id")
     SlashCmdList.JUMPCOINS("debug level luckylanding 99")
-    eq(ns.GetLevel("luckyLanding"), 25, "clamped to max")
+    eq(ns.GetLevel("luckyLanding"), def("luckyLanding").maxLevel, "clamped to max")
     SlashCmdList.JUMPCOINS("debug level nope 3")
     SlashCmdList.JUMPCOINS("debug coins abc")
     eq(ns.db.coins, 0, "bad input ignored")
 end)
 
 test("debug jump simulates a chained combo ending now", function()
-    LoadAddon({ version = 2, upgrades = { rhythm = 2 } }) -- +10% per stack
+    LoadAddon({ version = 2, upgrades = { rhythm = 2 } })
     clock = 6000
     SlashCmdList.JUMPCOINS("debug jump 12")
     eq(ns.db.totalJumps, 12, "jumps")
     eq(ns.combo, 12, "combo chained")
     -- stacks 0..10, capped: 1 + 1.1 + ... + 2.0 + 2.0
     local expected = 0
-    for c = 1, 12 do expected = expected + 1 + math.min(c - 1, 10) * 0.1 end
+    local perStack = def("rhythm").effect(2)
+    for c = 1, 12 do expected = expected + 1 + math.min(c - 1, ns.COMBO_MAX_STACKS) * perStack end
     near(ns.db.coins, expected, "combo payouts")
     eq(ns.IsComboActive(6000), true, "combo still active for real jumps")
     jump(6001)
@@ -390,7 +413,7 @@ local function chain(start, count)
 end
 
 test("COMBO_ENDED fires once when the window runs out", function()
-    LoadAddon({ version = 2, upgrades = { rhythm = 1 } }) -- +5% per stack
+    LoadAddon({ version = 2, upgrades = { rhythm = 1 } })
     local ends = captureComboEnds()
     local last = chain(9000, 5)
     ns.CheckComboEnded(last + 1)
@@ -399,7 +422,8 @@ test("COMBO_ENDED fires once when the window runs out", function()
     eq(#ends, 1, "fired after window")
     eq(ends[1].combo, 5, "final combo")
     local expected = 0
-    for c = 1, 5 do expected = expected + 1 + (c - 1) * 0.05 end
+    local perStack = def("rhythm").effect(1)
+    for c = 1, 5 do expected = expected + 1 + (c - 1) * perStack end
     near(ends[1].coins, expected, "coins earned in the chain")
     eq(ends[1].best, true, "first chain is a new best")
     ns.CheckComboEnded(last + 10)

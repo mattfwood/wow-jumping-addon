@@ -50,7 +50,7 @@ Two branches may both claim the same next version number. **Whoever merges secon
 
 ## Checks
 
-Run both before opening a PR. CI runs the same commands and must pass to merge.
+Run these before opening a PR. CI runs the same commands and they must pass to merge.
 
 ```bash
 luacheck .
@@ -60,8 +60,14 @@ luacheck .
 luajit tests/run.lua
 ```
 
+```bash
+luajit tools/sim.lua
+```
+
 - `tests/run.lua` stubs the WoW API. When code uses a new WoW function, add a stub there and its name to `read_globals` in `.luacheckrc`.
 - Add tests for new gameplay logic, upgrades and migrations.
+- `tools/sim.lua` simulates a player buying upgrades and fails if the pacing targets (ROADMAP.md) are missed. Any change to upgrade costs, growth or effects, or new upgrades, must keep it passing, and the PR should include its output. Try a casual (`luajit tools/sim.lua 2.5 6`) and a skilled player (`1.1 40`) too. If the targets themselves should change, update them in both ROADMAP.md and `TARGETS` in the simulator.
+- Tests should read prices and effects from `ns.UPGRADES_BY_ID` rather than hard-coding them, so balance changes don't break mechanics tests.
 - A project hook runs luacheck on every Lua file you edit. If it reports problems, fix them before moving on.
 
 ## Workflow

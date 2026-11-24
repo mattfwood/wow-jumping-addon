@@ -5,7 +5,7 @@
 
 local _, ns = ...
 
-ns.COMBO_WINDOW = 1.5     -- seconds allowed between jumps to keep a combo
+ns.COMBO_WINDOW = 1.5     -- seconds after landing to jump again and keep a combo
 ns.COMBO_MAX_STACKS = 10  -- combo stacks beyond the first jump that count
 ns.CRIT_MULTIPLIER = 10
 
@@ -15,8 +15,8 @@ ns.UPGRADES = {
         name = "Spring Boots",
         icon = "Interface\\Icons\\INV_Boots_02",
         desc = "Each jump earns more coins.",
-        baseCost = 10,
-        growth = 1.15,
+        baseCost = 20,
+        growth = 1.33,
         effect = function(level) return 1 + level end,
         formatEffect = function(v)
             return ns.FormatNumber(v) .. " per jump"
@@ -29,9 +29,9 @@ ns.UPGRADES = {
         desc = string.format(
             "Jump again within %.1fs of landing to build a combo. Each stack (up to %d) adds a bonus.",
             ns.COMBO_WINDOW, ns.COMBO_MAX_STACKS),
-        baseCost = 50,
-        growth = 1.25,
-        effect = function(level) return 0.05 * level end,
+        baseCost = 100,
+        growth = 1.45,
+        effect = function(level) return 0.01 * level end,
         formatEffect = function(v)
             return "+" .. ns.FormatPercent(v) .. " per combo stack"
         end,
@@ -41,10 +41,10 @@ ns.UPGRADES = {
         name = "Lucky Landing",
         icon = "Interface\\Icons\\INV_Misc_Coin_01",
         desc = string.format("Chance for a jump to pay %dx coins.", ns.CRIT_MULTIPLIER),
-        baseCost = 100,
-        growth = 1.35,
-        maxLevel = 25,
-        effect = function(level) return 0.02 * level end,
+        baseCost = 300,
+        growth = 1.7,
+        maxLevel = 20,
+        effect = function(level) return 0.01 * level end,
         formatEffect = function(v)
             return ns.FormatPercent(v) .. " crit chance"
         end,
@@ -56,8 +56,13 @@ for _, def in ipairs(ns.UPGRADES) do
     ns.UPGRADES_BY_ID[def.id] = def
 end
 
+-- Clamped to maxLevel, so lowering a max in a balance change can't leave old
+-- saves above it.
 function ns.GetLevel(id)
-    return ns.db.upgrades[id] or 0
+    local level = ns.db.upgrades[id] or 0
+    local max = ns.UPGRADES_BY_ID[id].maxLevel
+    if max and level > max then return max end
+    return level
 end
 
 function ns.GetEffect(id)
