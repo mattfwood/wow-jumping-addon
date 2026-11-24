@@ -52,8 +52,12 @@ Files in `JumpCoins/` load in the order listed in `JumpCoins.toc`:
 - `Upgrades.lua`: upgrade definitions, costs and buying. Add new upgrades here.
 - `Jump.lua`: jump detection, combos, crits and payouts.
 - `UI.lua`: coin display, combo counter and crit popup.
+- `Announce.lua`: banner when a combo of 20+ is dropped.
 - `Shop.lua`: shop window.
+- `Debug.lua`: `/jc debug` commands for testing in game (see TESTING.md).
 - `Slash.lua`: `/jc` commands.
+
+`tests/run.lua` runs the addon offline with a stubbed WoW API, and `tools/sim.lua` simulates a player to check balance (see below).
 
 Progress is saved per character in `JumpCoinsDB`. When the save format changes, bump `ns.SAVE_VERSION` in `Core.lua` and add a migration.
 
