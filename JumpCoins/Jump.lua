@@ -87,6 +87,18 @@ function ns.IsComboActive(now)
     return ns.combo > 1 and now <= ns.ComboDeadline(now)
 end
 
+-- Forget the last jump, its flight and the combo. Used by debug tools before
+-- simulating jumps. An open combo is reported as ended first, with its real
+-- length.
+function ns.ResetJumpState()
+    if comboOpen then EndCombo() end
+    lastJumpTime = -math.huge
+    awaitingTakeoff, inAir = false, false
+    comboAnchor = -math.huge
+    ns.combo = 0
+    watcher:SetScript("OnUpdate", nil)
+end
+
 -- Seconds left in the combo window; the full window while in the air.
 function ns.ComboTimeLeft(now)
     now = now or GetTime()

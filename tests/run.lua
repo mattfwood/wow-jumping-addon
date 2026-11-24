@@ -315,6 +315,65 @@ test("slash commands", function()
     SlashCmdList.JUMPCOINS("bogus")
 end)
 
+test("debug coins, add and level", function()
+    LoadAddon(nil)
+    SlashCmdList.JUMPCOINS("debug coins 1e6")
+    eq(ns.db.coins, 1e6, "coins set")
+    SlashCmdList.JUMPCOINS("debug add 500")
+    eq(ns.db.coins, 1000500, "coins added")
+    SlashCmdList.JUMPCOINS("debug add -9e9")
+    eq(ns.db.coins, 0, "coins never negative")
+    SlashCmdList.JUMPCOINS("debug level Spring Boots 4")
+    eq(ns.GetLevel("springBoots"), 4, "level by name")
+    SlashCmdList.JUMPCOINS("debug level rhythm 3")
+    eq(ns.GetLevel("rhythm"), 3, "level by id")
+    SlashCmdList.JUMPCOINS("debug level luckylanding 99")
+    eq(ns.GetLevel("luckyLanding"), 25, "clamped to max")
+    SlashCmdList.JUMPCOINS("debug level nope 3")
+    SlashCmdList.JUMPCOINS("debug coins abc")
+    eq(ns.db.coins, 0, "bad input ignored")
+end)
+
+test("debug jump simulates a chained combo ending now", function()
+    LoadAddon({ version = 2, upgrades = { rhythm = 2 } }) -- +10% per stack
+    clock = 6000
+    SlashCmdList.JUMPCOINS("debug jump 12")
+    eq(ns.db.totalJumps, 12, "jumps")
+    eq(ns.combo, 12, "combo chained")
+    -- stacks 0..10, capped: 1 + 1.1 + ... + 2.0 + 2.0
+    local expected = 0
+    for c = 1, 12 do expected = expected + 1 + math.min(c - 1, 10) * 0.1 end
+    near(ns.db.coins, expected, "combo payouts")
+    eq(ns.IsComboActive(6000), true, "combo still active for real jumps")
+    jump(6001)
+    eq(ns.combo, 13, "real jump continues simulated combo")
+end)
+
+test("debug jump works right after a real jump", function()
+    LoadAddon(nil)
+    jump(7000)
+    clock = 7000.1 -- within debounce of the real jump
+    SlashCmdList.JUMPCOINS("debug jump 3")
+    eq(ns.db.totalJumps, 4, "simulated jumps not debounced")
+end)
+
+test("debug crit always crits and popup only shows once", function()
+    LoadAddon(nil)
+    clock = 8000
+    SlashCmdList.JUMPCOINS("debug crit")
+    eq(ns.db.coins, 10, "crit pays 10x at 0% chance")
+    eq(ns.db.stats.crits, 1, "crit counted")
+    eq(ns.simulating, false, "simulating flag cleared")
+    assert(JumpCoinsFrame.popup.text.text:find("CRIT"), "popup shown")
+end)
+
+test("debug help and status don't error", function()
+    LoadAddon(nil)
+    SlashCmdList.JUMPCOINS("debug")
+    SlashCmdList.JUMPCOINS("debug status")
+    SlashCmdList.JUMPCOINS("debugger") -- not a debug command, falls to help
+end)
+
 -- Records COMBO_ENDED events for the currently loaded addon.
 local function captureComboEnds()
     local events = {}
@@ -421,6 +480,28 @@ test("big announcement for a dropped 20+ combo with Rhythm", function()
     eq(banner.title.text, "20x COMBO!", "exactly 20 announces")
     assert(not banner.subtitle.text:find("NEW BEST"), "not a new best")
     eq(ns.GetComboTier(150).title, "LEGENDARY COMBO", "legendary tier")
+end)
+
+test("debug jump closes an open combo correctly", function()
+    LoadAddon(nil)
+    local ends = captureComboEnds()
+    chain(14000, 5)              -- open real combo of 5
+    clock = 14005
+    SlashCmdList.JUMPCOINS("debug jump 3")
+    eq(#ends, 1, "old combo reported once")
+    eq(ends[1].combo, 5, "reported with its real length")
+    eq(ns.combo, 3, "simulated chain")
+    ns.CheckComboEnded(clock + 5)
+    eq(#ends, 2, "simulated chain reported")
+    eq(ends[2].combo, 3, "simulated chain length")
+end)
+
+test("debug jump 25 triggers the big announcement", function()
+    LoadAddon({ version = 2, upgrades = { rhythm = 1 } })
+    clock = 15000
+    SlashCmdList.JUMPCOINS("debug jump 25")
+    ns.CheckComboEnded(clock + 5)
+    eq(JumpCoinsAnnounce.title.text, "25x COMBO!", "announced")
 end)
 
 -- Landing-based combo timing. These drive the per-frame watcher like the game

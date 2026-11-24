@@ -19,7 +19,7 @@
 
 ## Tested in game
 
-<!-- CI and Claude can't run WoW. Be honest here. -->
+<!-- CI and Claude can't run WoW. Be honest here. Checklists and debug commands are in TESTING.md. -->
 
 - [ ] Tested in game. Client and version: ___
 - [ ] Not tested in game yet. Things to check: ___
