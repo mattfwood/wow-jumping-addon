@@ -33,6 +33,7 @@ CI and Claude can't run WoW, so a person checks pull requests in game. This take
 - [ ] Big numbers format correctly (`/jc debug coins 123456789` shows 123M).
 - [ ] `/reload`, and coins, upgrades and window position are kept.
 - [ ] Escape closes the shop.
+- [ ] The shop's **Reset progress** button opens a confirmation. Cancel (or Escape) changes nothing. Reset sets coins, upgrades and stats to zero, and the shop and coin window update straight away.
 
 ## Save format changes
 

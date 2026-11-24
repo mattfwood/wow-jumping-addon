@@ -15,6 +15,7 @@ files["JumpCoins/"] = {
         "SLASH_JUMPCOINS1",
         "SLASH_JUMPCOINS2",
         "SlashCmdList",
+        "StaticPopupDialogs",
     },
     -- WoW API the addon reads. Add new API functions here when you use them.
     read_globals = {
@@ -29,6 +30,7 @@ files["JumpCoins/"] = {
         "IsSwimming",
         "PlaySound",
         "SOUNDKIT",
+        "StaticPopup_Show",
         "STANDARD_TEXT_FONT",
         "strlower",
         "strtrim",

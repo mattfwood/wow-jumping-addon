@@ -7,14 +7,15 @@ A World of Warcraft incremental game addon: every jump earns coins, and coins bu
 Copy or symlink the `JumpCoins` folder into your WoW AddOns directory. For example:
 
 ```
-/Applications/World of Warcraft/_classic_era_/Interface/AddOns/JumpCoins
+/Applications/World of Warcraft/_forever_/Interface/AddOns/JumpCoins
 ```
 
-Use the folder for your game flavor (`_retail_`, `_classic_`, `_classic_era_`, and so on).
+Use the folder for your game flavor (`_forever_`, `_retail_`, `_classic_era_`, and so on).
 
 ## Playing
 
 - A small draggable window shows your coins. Hover over it for your stats; click it to open the shop.
+- The shop's **Reset progress** button wipes coins, upgrades and stats after a confirmation.
 - Combo stacks and crits show on the window as they happen.
 - Once you own Rhythm, dropping a combo of 20 or more shows a big announcement at the top of the screen: gold at 20+, purple "EPIC" at 50+, orange "LEGENDARY" at 100+.
 

@@ -1,4 +1,4 @@
-## Interface: 11507, 20504, 30404, 40402, 50500, 110205
+## Interface: 16001, 11507, 20504, 30404, 40402, 50500, 110205
 ## Title: Jump Coins
 ## Notes: Earn a coin every time you jump, then spend coins on upgrades.
 ## Author: mwood

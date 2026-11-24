@@ -21,6 +21,9 @@ UISpecialFrames = {}
 SlashCmdList = {}
 BackdropTemplateMixin = {}
 SOUNDKIT = { LOOTWINDOW_COIN_SOUND = 1 }
+StaticPopupDialogs = {}
+shownPopups = {}
+function StaticPopup_Show(name) table.insert(shownPopups, name) end
 
 local printed = {}
 function print(msg) table.insert(printed, msg) end
@@ -629,6 +632,30 @@ test("no announcement without Rhythm", function()
     local last = chain(13000, 30)
     ns.CheckComboEnded(last + 5)
     eq(JumpCoinsAnnounce, nil, "no banner without rhythm")
+end)
+
+test("shop reset button asks first, then resets everything", function()
+    LoadAddon({ version = 2, coins = 5000, lifetimeCoins = 9000, totalJumps = 300,
+        upgrades = { springBoots = 4, rhythm = 2 }, stats = { bestCombo = 12, crits = 3 } })
+    ns.ToggleShop(true)
+    local shop = JumpCoinsShop
+    shownPopups = {}
+    shop.reset.scripts.OnClick()
+    eq(#shownPopups, 1, "confirmation shown")
+    local popup = StaticPopupDialogs[shownPopups[1]]
+    assert(popup and popup.OnAccept, "popup registered with OnAccept")
+    eq(ns.db.coins, 5000, "nothing reset before confirming")
+    eq(popup.hideOnEscape, true, "escape cancels")
+
+    popup.OnAccept()
+    eq(ns.db.coins, 0, "coins reset")
+    eq(ns.db.lifetimeCoins, 0, "lifetime coins reset")
+    eq(ns.db.totalJumps, 0, "jumps reset")
+    eq(ns.GetLevel("springBoots"), 0, "upgrades reset")
+    eq(ns.db.stats.bestCombo, 0, "stats reset")
+    eq(shop.rows[1].level.text, "Lv 0", "shop refreshed")
+    assert(JumpCoinsFrame.coins.text:find("Coins: |cffffd1000|r", 1, true), "display refreshed")
+    shop.reset.scripts.OnEnter(shop.reset) -- tooltip shouldn't error
 end)
 
 io.write(string.format("%d passed, %d failed\n", passed, failed))
