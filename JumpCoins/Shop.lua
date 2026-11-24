@@ -5,6 +5,25 @@ local _, ns = ...
 local ROW_HEIGHT = 52
 local WIDTH = 360
 local HEADER = 44
+local FOOTER = 40
+
+local RESET_POPUP = "JUMPCOINS_RESET_PROGRESS"
+
+-- WoW's standard confirmation dialog. Escape or "Cancel" does nothing.
+StaticPopupDialogs[RESET_POPUP] = {
+    text = "Reset all Jump Coins progress?\n\nCoins, upgrades and stats go back to zero. This can't be undone.",
+    button1 = "Reset",
+    button2 = "Cancel",
+    OnAccept = function()
+        ns.ResetProgress()
+        ns.Print("Progress reset.")
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    showAlert = true,
+    preferredIndex = 3, -- avoids clashing with Blizzard's own popups
+}
 
 local shop
 
@@ -86,7 +105,7 @@ end
 
 local function CreateShop()
     local f = CreateFrame("Frame", "JumpCoinsShop", UIParent, ns.BACKDROP_TEMPLATE)
-    f:SetSize(WIDTH, HEADER + #ns.UPGRADES * ROW_HEIGHT + 12)
+    f:SetSize(WIDTH, HEADER + #ns.UPGRADES * ROW_HEIGHT + FOOTER)
     f:SetPoint("CENTER")
     f:SetFrameStrata("DIALOG")
     f:SetClampedToScreen(true)
@@ -111,6 +130,20 @@ local function CreateShop()
     for i, def in ipairs(ns.UPGRADES) do
         f.rows[i] = CreateRow(f, def, i)
     end
+
+    -- Reset button, behind a confirmation popup.
+    f.reset = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+    f.reset:SetSize(110, 22)
+    f.reset:SetPoint("BOTTOMLEFT", 12, 10)
+    f.reset:SetText("Reset progress")
+    f.reset:SetScript("OnClick", function() StaticPopup_Show(RESET_POPUP) end)
+    f.reset:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Reset progress")
+        GameTooltip:AddLine("Sets coins, upgrades and stats back to zero. Asks first.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    f.reset:SetScript("OnLeave", GameTooltip_Hide)
 
     f:SetScript("OnShow", Refresh)
     f:Hide()
