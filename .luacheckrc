@@ -40,11 +40,13 @@ files["JumpCoins/"] = {
     },
 }
 
--- The test harness stubs the WoW API by defining globals on purpose. 131
--- (unused global) is ignored because the addon files, not the harness, use
--- the stubs, which only shows when this file is linted on its own.
-files["tests/"] = {
+-- The test harness and dev tools stub the WoW API by defining globals on
+-- purpose. 131 (unused global) is ignored because the addon files, not the
+-- harness, use the stubs, which only shows when a file is linted on its own.
+local harness = {
     std = "+max",
     allow_defined_top = true,
     ignore = { "111", "112", "113", "121", "122", "131", "142", "143" },
 }
+files["tests/"] = harness
+files["tools/"] = harness

@@ -22,3 +22,6 @@ jobs:
 
       - name: Test
         run: luajit tests/run.lua
+
+      - name: Balance targets
+        run: luajit tools/sim.lua
