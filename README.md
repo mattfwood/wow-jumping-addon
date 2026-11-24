@@ -7,10 +7,10 @@ A World of Warcraft incremental game addon: every jump earns coins, and coins bu
 Copy or symlink the `JumpCoins` folder into your WoW AddOns directory. For example:
 
 ```
-/Applications/World of Warcraft/_classic_era_/Interface/AddOns/JumpCoins
+/Applications/World of Warcraft/_forever_/Interface/AddOns/JumpCoins
 ```
 
-Use the folder for your game flavor (`_retail_`, `_classic_`, `_classic_era_`, and so on).
+Use the folder for your game flavor (`_forever_`, `_retail_`, `_classic_era_`, and so on).
 
 ## Playing
 
