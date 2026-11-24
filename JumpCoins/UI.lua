@@ -160,7 +160,7 @@ ns.On("LOADED", CreateDisplay)
 ns.On("COINS_CHANGED", UpdateCoins)
 ns.On("JUMP", function(earned, isCrit)
     if not display then return end
-    if isCrit then ShowCritPopup(earned) end
+    if isCrit and not ns.simulating then ShowCritPopup(earned) end
     UpdateCombo()
     if ns.IsComboActive() then
         display:SetScript("OnUpdate", UpdateCombo)

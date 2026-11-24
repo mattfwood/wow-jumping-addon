@@ -11,4 +11,5 @@ Upgrades.lua
 Jump.lua
 UI.lua
 Shop.lua
+Debug.lua
 Slash.lua

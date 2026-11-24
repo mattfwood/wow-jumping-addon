@@ -52,9 +52,13 @@ Goal: long-term progress and a reason to start over.
 - **Minimap button,** sounds and a settings page.
 - **Account-wide** prestige or a leaderboard across your characters.
 
-## Open decisions
+## Decisions
 
-- **Per character or account-wide?** Saves are per character today. A common split is coins per character and prestige account-wide.
-- **Libraries or plain code?** Ace3 makes settings, saving and a minimap button easier. Plain code is lighter. Phase 1 uses plain code.
-- **How hard should Phase 2 steer play?** Bigger rewards for combat or dungeon jumps will change how people play.
-- **Theme:** plain coins, or a story (gnome bounce engineer, goblin trampoline tycoon and so on).
+Decided 2026-11-24. These are also in CLAUDE.md so every Claude session follows them.
+
+- **Saves are split.** Coins, upgrades and stats are per character. Prestige (Feathers, Phase 4) is account-wide, so alts start stronger.
+- **Plain code, no libraries.** No Ace3 or LibDBIcon, including for Phase 5 settings and the minimap button.
+- **Phase 2 is a light nudge.** Situational multipliers stay around 1.1×–1.5×. Normal play pays a bit more, but standing and jumping is still fine.
+- **Theme is plain coins.** Coins, upgrades and Feathers, with no story theme for now.
+
+Work is tracked as [GitHub issues](https://github.com/mattfwood/wow-jumping-addon/issues).

@@ -73,4 +73,4 @@ CI runs both on every pull request, and they must pass before merging.
 
 ## Contributing
 
-`main` is protected: work on a branch and open a pull request. Project rules for people and Claude alike are in [CLAUDE.md](CLAUDE.md).
+`main` is protected: work on a branch and open a pull request. Project rules for people and Claude alike are in [CLAUDE.md](CLAUDE.md). Work is tracked in [GitHub issues](https://github.com/mattfwood/wow-jumping-addon/issues): assign yourself before you start. [TESTING.md](TESTING.md) has the in-game checklist and `/jc debug` commands for testing quickly.

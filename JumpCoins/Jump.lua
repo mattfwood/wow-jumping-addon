@@ -20,6 +20,12 @@ function ns.CalculateJump(combo, isCrit)
     return base * mult
 end
 
+-- Forget the last jump and combo. Used by debug tools before simulating jumps.
+function ns.ResetJumpState()
+    lastJumpTime = -math.huge
+    ns.combo = 0
+end
+
 function ns.IsComboActive(now)
     return ns.combo > 1 and (now or GetTime()) - lastJumpTime <= ns.COMBO_WINDOW
 end

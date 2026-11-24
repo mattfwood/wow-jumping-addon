@@ -312,5 +312,64 @@ test("slash commands", function()
     SlashCmdList.JUMPCOINS("bogus")
 end)
 
+test("debug coins, add and level", function()
+    LoadAddon(nil)
+    SlashCmdList.JUMPCOINS("debug coins 1e6")
+    eq(ns.db.coins, 1e6, "coins set")
+    SlashCmdList.JUMPCOINS("debug add 500")
+    eq(ns.db.coins, 1000500, "coins added")
+    SlashCmdList.JUMPCOINS("debug add -9e9")
+    eq(ns.db.coins, 0, "coins never negative")
+    SlashCmdList.JUMPCOINS("debug level Spring Boots 4")
+    eq(ns.GetLevel("springBoots"), 4, "level by name")
+    SlashCmdList.JUMPCOINS("debug level rhythm 3")
+    eq(ns.GetLevel("rhythm"), 3, "level by id")
+    SlashCmdList.JUMPCOINS("debug level luckylanding 99")
+    eq(ns.GetLevel("luckyLanding"), 25, "clamped to max")
+    SlashCmdList.JUMPCOINS("debug level nope 3")
+    SlashCmdList.JUMPCOINS("debug coins abc")
+    eq(ns.db.coins, 0, "bad input ignored")
+end)
+
+test("debug jump simulates a chained combo ending now", function()
+    LoadAddon({ version = 2, upgrades = { rhythm = 2 } }) -- +10% per stack
+    clock = 6000
+    SlashCmdList.JUMPCOINS("debug jump 12")
+    eq(ns.db.totalJumps, 12, "jumps")
+    eq(ns.combo, 12, "combo chained")
+    -- stacks 0..10, capped: 1 + 1.1 + ... + 2.0 + 2.0
+    local expected = 0
+    for c = 1, 12 do expected = expected + 1 + math.min(c - 1, 10) * 0.1 end
+    near(ns.db.coins, expected, "combo payouts")
+    eq(ns.IsComboActive(6000), true, "combo still active for real jumps")
+    jump(6001)
+    eq(ns.combo, 13, "real jump continues simulated combo")
+end)
+
+test("debug jump works right after a real jump", function()
+    LoadAddon(nil)
+    jump(7000)
+    clock = 7000.1 -- within debounce of the real jump
+    SlashCmdList.JUMPCOINS("debug jump 3")
+    eq(ns.db.totalJumps, 4, "simulated jumps not debounced")
+end)
+
+test("debug crit always crits and popup only shows once", function()
+    LoadAddon(nil)
+    clock = 8000
+    SlashCmdList.JUMPCOINS("debug crit")
+    eq(ns.db.coins, 10, "crit pays 10x at 0% chance")
+    eq(ns.db.stats.crits, 1, "crit counted")
+    eq(ns.simulating, false, "simulating flag cleared")
+    assert(JumpCoinsFrame.popup.text.text:find("CRIT"), "popup shown")
+end)
+
+test("debug help and status don't error", function()
+    LoadAddon(nil)
+    SlashCmdList.JUMPCOINS("debug")
+    SlashCmdList.JUMPCOINS("debug status")
+    SlashCmdList.JUMPCOINS("debugger") -- not a debug command, falls to help
+end)
+
 io.write(string.format("%d passed, %d failed\n", passed, failed))
 os.exit(failed == 0 and 0 or 1)
